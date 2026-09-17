@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #F2F0E6;
+  color: #1B211C;
+}
+
+/* ---------- Masonry gallery grid ---------- */
+.masonry {
+  column-count: 2;
+  column-gap: 10px;
+}
+@media (min-width: 900px) {
+  .masonry {
+    column-count: 3;
+    column-gap: 12px;
+  }
+}
+.masonry > * {
+  break-inside: avoid;
+  margin-bottom: 10px;
+  display: block;
+}
+@media (min-width: 900px) {
+  .masonry > * {
+    margin-bottom: 12px;
+  }
+}
+/* stagger every other tile on phones for visual rhythm */
+@media (max-width: 700px) {
+  .masonry > *:nth-child(odd) img {
+    margin-top: 22px;
+  }
+}
+
+/* ---------- Scroll reveal ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ---------- Print (admission confirmation) ---------- */
+@media print {
+  header,
+  footer {
+    display: none !important;
+  }
+}
