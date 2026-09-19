@@ -9,6 +9,7 @@ import {
   stepFields,
   type AdmissionFormValues,
 } from '@/lib/validation/admission';
+import { submitAdmission } from '@/lib/actions/admissions';
 import StepperHeader from './StepperHeader';
 import StepLearner from './StepLearner';
 import StepGuardian from './StepGuardian';
@@ -18,16 +19,32 @@ import StepConfirmation from './StepConfirmation';
 
 const TOTAL_STEPS = 4; // Learner, Guardian, Documents, Review (Confirmation replaces the form on submit)
 
-function generateReferenceNumber() {
-  const year = new Date().getFullYear();
-  const random = Math.floor(10000 + Math.random() * 90000);
-  return `CMA-${year}-${random}`;
+function toFormData(values: AdmissionFormValues): FormData {
+  const fd = new FormData();
+  const fileFields = new Set(['studentPhoto', 'guardianPhoto', 'documents']);
+
+  Object.entries(values).forEach(([key, value]) => {
+    if (fileFields.has(key)) {
+      const fileList = value as FileList | undefined;
+      if (fileList && fileList.length > 0) {
+        Array.from(fileList).forEach((file) => fd.append(key, file));
+      }
+      return;
+    }
+    if (value !== undefined && value !== null) {
+      fd.append(key, String(value));
+    }
+  });
+
+  return fd;
 }
 
 export default function AdmissionStepper() {
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const methods = useForm<AdmissionFormValues>({
     resolver: zodResolver(admissionSchema),
@@ -44,11 +61,17 @@ export default function AdmissionStepper() {
 
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
 
-  const onSubmit = () => {
-    // TODO: replace with a server action that writes the application (and
-    // uploaded files) to Supabase once the backend exists, and returns a
-    // server-issued reference number instead of this client-side one.
-    setReferenceNumber(generateReferenceNumber());
+  const onSubmit = async (values: AdmissionFormValues) => {
+    setSubmitting(true);
+    setSubmitError('');
+    const result = await submitAdmission(toFormData(values));
+    setSubmitting(false);
+
+    if (!result.success) {
+      setSubmitError(result.error);
+      return;
+    }
+    setReferenceNumber(result.referenceNumber);
     setSubmitted(true);
   };
 
@@ -73,6 +96,12 @@ export default function AdmissionStepper() {
           {currentStep === 2 && <StepDocuments />}
           {currentStep === 3 && <StepReview onEditStep={setCurrentStep} />}
 
+          {submitError && (
+            <p className="mt-4 rounded-sm bg-red-50 px-4 py-3 text-sm text-red-700">
+              {submitError}
+            </p>
+          )}
+
           <div className="mt-9 flex items-center justify-between border-t border-border pt-6">
             <button
               type="button"
@@ -94,9 +123,10 @@ export default function AdmissionStepper() {
             ) : (
               <button
                 type="submit"
-                className="flex items-center gap-1.5 rounded-sm bg-loam px-6 py-2.5 text-sm font-semibold text-white hover:bg-loam-dark"
+                disabled={submitting}
+                className="flex items-center gap-1.5 rounded-sm bg-loam px-6 py-2.5 text-sm font-semibold text-white hover:bg-loam-dark disabled:opacity-60"
               >
-                Submit Application <Send size={16} />
+                {submitting ? 'Submitting…' : 'Submit Application'} <Send size={16} />
               </button>
             )}
           </div>

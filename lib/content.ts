@@ -106,9 +106,10 @@ export const programs: Program[] = [
   },
 ];
 
-// Real CMA photography from the live site. In production these come from
-// the `gallery_images` Supabase table (see schema notes in README) rather
-// than a hardcoded array.
+// Real CMA photography from the live site. This now serves only as a
+// fallback shown by lib/actions/gallery.ts's getGalleryImages() when the
+// `gallery_images` Supabase table is still empty — once photos are
+// uploaded via /admin/gallery, those take over automatically.
 export const galleryImages: { src: string; alt: string }[] = [
   {
     src: 'https://cliffsidemotariacademy.com/uploads/gallery/media/1762923091-1626326247691412530d03f!_MG_4361.JPG',
@@ -156,6 +157,7 @@ export const nav = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
   { href: '/academics', label: 'Academics' },
+  { href: '/news', label: 'News' },
   { href: '/gallery', label: 'Gallery' },
   { href: '/contact', label: 'Contact' },
 ];

@@ -7,8 +7,11 @@ const nextConfig = {
         hostname: 'cliffsidemotariacademy.com',
         pathname: '/uploads/**',
       },
-      // Add the Supabase Storage hostname here once storage is wired up, e.g.:
-      // { protocol: 'https', hostname: '<project-ref>.supabase.co', pathname: '/storage/v1/object/public/**' },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
   },
 };

@@ -4,9 +4,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { contactSchema, type ContactFormValues } from '@/lib/validation/contact';
+import { submitContactMessage } from '@/lib/actions/contact';
 
 export default function ContactForm() {
-  const [status, setStatus] = useState<'idle' | 'sent'>('idle');
+  const [status, setStatus] = useState<'idle' | 'sent' | 'error'>('idle');
   const {
     register,
     handleSubmit,
@@ -15,13 +16,13 @@ export default function ContactForm() {
   } = useForm<ContactFormValues>({ resolver: zodResolver(contactSchema) });
 
   const onSubmit = async (values: ContactFormValues) => {
-    // TODO: wire to a server action that writes to Supabase (or sends an
-    // email) once the backend exists. Kept client-only for now so the form
-    // is fully functional and validated in the meantime.
-    console.log('Contact form submission', values);
-    await new Promise((r) => setTimeout(r, 400));
-    setStatus('sent');
-    reset();
+    const result = await submitContactMessage(values);
+    if (result.success) {
+      setStatus('sent');
+      reset();
+    } else {
+      setStatus('error');
+    }
   };
 
   if (status === 'sent') {
@@ -73,6 +74,12 @@ export default function ContactForm() {
           <p className="mt-1 text-xs text-red-700">{errors.message.message}</p>
         )}
       </div>
+
+      {status === 'error' && (
+        <p className="rounded-sm bg-red-50 px-4 py-3 text-sm text-red-700">
+          Something went wrong sending your message. Please try again or email us directly.
+        </p>
+      )}
 
       <button
         type="submit"
