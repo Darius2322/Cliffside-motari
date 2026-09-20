@@ -21,7 +21,7 @@ export default async function AdminDashboardPage() {
     openComplaints,
     draftNews,
   ] = await Promise.all([
-    countRows(supabase, 'admissions', { status: 'Received' }),
+    countRows(supabase, 'admissions', { status: 'Submitted' }),
     countRows(supabase, 'reviews', { status: 'Pending' }),
     countRows(supabase, 'complaints', { status: 'Received' }),
     countRows(supabase, 'news_posts', { status: 'Draft' }),

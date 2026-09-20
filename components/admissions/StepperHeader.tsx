@@ -1,9 +1,11 @@
 'use client';
 
-import { GraduationCap, Users, FileText, ClipboardCheck, Check } from 'lucide-react';
+import { GraduationCap, ArrowRightLeft, HeartPulse, Users, FileText, ClipboardCheck, Check } from 'lucide-react';
 
 const steps = [
   { label: 'Learner', icon: GraduationCap },
+  { label: 'Transfer', icon: ArrowRightLeft },
+  { label: 'Medical', icon: HeartPulse },
   { label: 'Guardian', icon: Users },
   { label: 'Documents', icon: FileText },
   { label: 'Review', icon: ClipboardCheck },
@@ -30,20 +32,14 @@ export default function StepperHeader({ currentStep }: { currentStep: number }) 
                       : 'border-border bg-surface text-mist'
                   }`}
                 >
-                  {isDone ? <Check size={20} /> : <Icon size={20} />}
+                  {isDone ? <Check size={20} /> : <Icon size={19} />}
                 </div>
-                <span
-                  className={`text-xs font-semibold ${
-                    isActive || isDone ? 'text-canopy' : 'text-mist'
-                  }`}
-                >
-                  {step.label}
+                <span className={`text-xs font-semibold ${isActive || isDone ? 'text-canopy' : 'text-mist'}`}>
+                  {String(i + 1).padStart(2, '0')} {step.label}
                 </span>
               </div>
               {i < steps.length - 1 && (
-                <div
-                  className={`mx-3 h-px flex-1 ${i < currentStep ? 'bg-canopy' : 'bg-border'}`}
-                />
+                <div className={`mx-3 h-px flex-1 ${i < currentStep ? 'bg-canopy' : 'bg-border'}`} />
               )}
             </div>
           );

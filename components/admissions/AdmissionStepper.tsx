@@ -12,27 +12,44 @@ import {
 import { submitAdmission } from '@/lib/actions/admissions';
 import StepperHeader from './StepperHeader';
 import StepLearner from './StepLearner';
-import StepGuardian from './StepGuardian';
+import StepTransfer from './StepTransfer';
+import StepMedical from './StepMedical';
+import StepGuardians from './StepGuardians';
 import StepDocuments from './StepDocuments';
 import StepReview from './StepReview';
 import StepConfirmation from './StepConfirmation';
 
-const TOTAL_STEPS = 4; // Learner, Guardian, Documents, Review (Confirmation replaces the form on submit)
+const TOTAL_STEPS = 6; // Learner, Transfer, Medical, Guardian, Documents, Review
 
 function toFormData(values: AdmissionFormValues): FormData {
   const fd = new FormData();
-  const fileFields = new Set(['studentPhoto', 'guardianPhoto', 'documents']);
 
-  Object.entries(values).forEach(([key, value]) => {
-    if (fileFields.has(key)) {
-      const fileList = value as FileList | undefined;
-      if (fileList && fileList.length > 0) {
-        Array.from(fileList).forEach((file) => fd.append(key, file));
-      }
-      return;
-    }
-    if (value !== undefined && value !== null) {
-      fd.append(key, String(value));
+  const scalarFields: (keyof AdmissionFormValues)[] = [
+    'firstName', 'middleName', 'lastName', 'dateOfBirth', 'gender',
+    'previousSchool', 'studentClass', 'stream',
+    'isTransferring', 'transferSchoolName', 'transferSchoolLocation', 'transferReason',
+    'allergies', 'medicalConditions', 'hasDisability', 'disabilityDetails', 'otherMedicalNotes',
+  ];
+  scalarFields.forEach((key) => {
+    const val = values[key];
+    if (val !== undefined && val !== null) fd.append(key as string, String(val));
+  });
+
+  fd.append('hasSecondGuardian', String(!!values.hasSecondGuardian));
+  fd.append('guardian1', JSON.stringify(values.guardian1));
+  if (values.hasSecondGuardian) {
+    fd.append('guardian2', JSON.stringify(values.guardian2 ?? {}));
+  }
+
+  if (values.studentPhoto instanceof File) {
+    fd.append('studentPhoto', values.studentPhoto);
+  }
+
+  const fileListFields: (keyof AdmissionFormValues)[] = ['transferDocuments', 'resultSlip', 'otherDocuments'];
+  fileListFields.forEach((key) => {
+    const val = values[key] as FileList | undefined;
+    if (val && val.length > 0) {
+      Array.from(val).forEach((file) => fd.append(key as string, file));
     }
   });
 
@@ -49,6 +66,7 @@ export default function AdmissionStepper() {
   const methods = useForm<AdmissionFormValues>({
     resolver: zodResolver(admissionSchema),
     mode: 'onBlur',
+    defaultValues: { hasDisability: 'No', hasSecondGuardian: false },
   });
 
   const { trigger, handleSubmit, getValues } = methods;
@@ -92,14 +110,14 @@ export default function AdmissionStepper() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           {currentStep === 0 && <StepLearner />}
-          {currentStep === 1 && <StepGuardian />}
-          {currentStep === 2 && <StepDocuments />}
-          {currentStep === 3 && <StepReview onEditStep={setCurrentStep} />}
+          {currentStep === 1 && <StepTransfer />}
+          {currentStep === 2 && <StepMedical />}
+          {currentStep === 3 && <StepGuardians />}
+          {currentStep === 4 && <StepDocuments />}
+          {currentStep === 5 && <StepReview onEditStep={setCurrentStep} />}
 
           {submitError && (
-            <p className="mt-4 rounded-sm bg-red-50 px-4 py-3 text-sm text-red-700">
-              {submitError}
-            </p>
+            <p className="mt-4 rounded-sm bg-red-50 px-4 py-3 text-sm text-red-700">{submitError}</p>
           )}
 
           <div className="mt-9 flex items-center justify-between border-t border-border pt-6">

@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-// Field set copied from the live system at
-// cliffsidemotariacademy.com/online_admission (Basic Details / Guardian
-// Details / Upload Documents). Required fields there (marked *) map to
-// required here; everything else is optional, matching the real form.
+// Field set per the expanded admissions brief: Learner (no student
+// contact fields, stream optional), Transfer, Medical, Guardian(s)
+// (1 required, 1 optional), Documents (all optional unless the school
+// says otherwise later).
 
 export const classOptions = [
   'KINDERGARTEN',
@@ -20,48 +20,80 @@ export const classOptions = [
   'GRADE 9',
 ] as const;
 
-export const guardianIsOptions = ['Father', 'Mother', 'Other'] as const;
-
-export const basicDetailsSchema = z.object({
-  studentClass: z.enum(classOptions, { errorMap: () => ({ message: 'Please select a class' }) }),
-  stream: z.string().min(1, 'Please select a stream'),
+// ---------- Learner ----------
+export const learnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().optional(),
-  gender: z.enum(['Male', 'Female'], { errorMap: () => ({ message: 'Please select a gender' }) }),
+  middleName: z.string().optional(),
+  lastName: z.string().min(1, 'Last name is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  mobileNumber: z.string().optional(),
-  email: z.string().email('Please enter a valid email address'),
-  // File inputs are validated for presence only in the browser; real
-  // MIME/size validation belongs server-side once storage exists.
+  gender: z.enum(['Male', 'Female'], { errorMap: () => ({ message: 'Please select a gender' }) }),
+  previousSchool: z.string().optional(),
+  studentClass: z.enum(classOptions, { errorMap: () => ({ message: 'Please select a class' }) }),
+  stream: z.string().optional(),
   studentPhoto: z.any().optional(),
 });
 
-export const guardianDetailsSchema = z.object({
-  guardianIs: z.enum(guardianIsOptions, {
-    errorMap: () => ({ message: 'Please specify the relationship' }),
-  }),
-  guardianName: z.string().min(1, "Guardian name is required"),
-  guardianRelation: z.string().min(1, 'Guardian relation is required'),
-  guardianEmail: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
-  guardianPhoto: z.any().optional(),
-  guardianPhone: z.string().optional(),
-  guardianOccupation: z.string().optional(),
-  guardianAddress: z.string().optional(),
+// ---------- Transfer ----------
+export const transferSchema = z.object({
+  isTransferring: z.enum(['Yes', 'No'], { errorMap: () => ({ message: 'Please select an option' }) }),
+  transferSchoolName: z.string().optional(),
+  transferSchoolLocation: z.string().optional(),
+  transferReason: z.string().optional(),
 });
 
+// ---------- Medical ----------
+export const medicalSchema = z.object({
+  allergies: z.string().optional(),
+  medicalConditions: z.string().optional(),
+  hasDisability: z.enum(['Yes', 'No']).default('No'),
+  disabilityDetails: z.string().optional(),
+  otherMedicalNotes: z.string().optional(),
+});
+
+// ---------- Guardian ----------
+export const guardianFieldsSchema = z.object({
+  fullName: z.string().min(1, 'Guardian name is required'),
+  relationship: z.string().min(1, 'Relationship is required'),
+  primaryPhone: z.string().min(1, 'A primary phone number is required'),
+  secondaryPhone: z.string().optional(),
+  email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
+  address: z.string().optional(),
+});
+
+export const guardiansSchema = z.object({
+  guardian1: guardianFieldsSchema,
+  hasSecondGuardian: z.boolean().default(false),
+  guardian2: z.object({
+    fullName: z.string().optional(),
+    relationship: z.string().optional(),
+    primaryPhone: z.string().optional(),
+    secondaryPhone: z.string().optional(),
+    email: z.string().email('Please enter a valid email address').optional().or(z.literal('')),
+    address: z.string().optional(),
+  }).optional(),
+});
+
+// ---------- Documents ----------
 export const documentsSchema = z.object({
-  documents: z.any().optional(),
+  transferDocuments: z.any().optional(),
+  resultSlip: z.any().optional(),
+  otherDocuments: z.any().optional(),
 });
 
-export const admissionSchema = basicDetailsSchema
-  .merge(guardianDetailsSchema)
+// ---------- Combined ----------
+export const admissionSchema = learnerSchema
+  .merge(transferSchema)
+  .merge(medicalSchema)
+  .merge(guardiansSchema)
   .merge(documentsSchema);
 
 export type AdmissionFormValues = z.infer<typeof admissionSchema>;
 
 export const stepFields: Record<number, (keyof AdmissionFormValues)[]> = {
-  0: ['studentClass', 'stream', 'firstName', 'lastName', 'gender', 'dateOfBirth', 'mobileNumber', 'email', 'studentPhoto'],
-  1: ['guardianIs', 'guardianName', 'guardianRelation', 'guardianEmail', 'guardianPhoto', 'guardianPhone', 'guardianOccupation', 'guardianAddress'],
-  2: ['documents'],
-  3: [],
+  0: ['firstName', 'middleName', 'lastName', 'dateOfBirth', 'gender', 'previousSchool', 'studentClass', 'stream', 'studentPhoto'],
+  1: ['isTransferring', 'transferSchoolName', 'transferSchoolLocation', 'transferReason'],
+  2: ['allergies', 'medicalConditions', 'hasDisability', 'disabilityDetails', 'otherMedicalNotes'],
+  3: ['guardian1', 'hasSecondGuardian', 'guardian2'],
+  4: ['transferDocuments', 'resultSlip', 'otherDocuments'],
+  5: [],
 };

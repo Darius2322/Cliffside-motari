@@ -2,30 +2,61 @@
 
 import { useFormContext } from 'react-hook-form';
 import type { AdmissionFormValues } from '@/lib/validation/admission';
-import { Field, inputClass } from './FormField';
+import { inputClass } from './FormField';
 
 export default function StepDocuments() {
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext<AdmissionFormValues>();
+  const { register, watch } = useFormContext<AdmissionFormValues>();
+  const isTransferring = watch('isTransferring');
 
   return (
     <div>
-      <h2 className="mb-1 font-serif text-xl text-canopy">Upload Documents</h2>
+      <h2 className="mb-1 font-serif text-xl text-canopy">Documents</h2>
       <p className="mb-6 text-sm text-mist">
-        To upload multiple documents, compress them into a single file first, then
-        upload it.
+        All documents here are optional unless the school has told you
+        otherwise. Accepted formats: PDF, JPG, JPEG, PNG.
       </p>
 
-      <Field label="Documents" error={errors.documents?.message as string}>
-        <input
-          type="file"
-          multiple
-          {...register('documents')}
-          className={`${inputClass} cursor-pointer`}
-        />
-      </Field>
+      <div className="grid gap-6">
+        {isTransferring === 'Yes' && (
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-mist">
+              Transfer Documents <span className="italic text-mist">(optional)</span>
+            </label>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png"
+              {...register('transferDocuments')}
+              className={`${inputClass} cursor-pointer`}
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-mist">
+            Result Slip <span className="italic text-mist">(optional)</span>
+          </label>
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            {...register('resultSlip')}
+            className={`${inputClass} cursor-pointer`}
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-sm font-semibold text-mist">
+            Other Documents <span className="italic text-mist">(optional)</span>
+          </label>
+          <input
+            type="file"
+            multiple
+            accept=".pdf,.jpg,.jpeg,.png"
+            {...register('otherDocuments')}
+            className={`${inputClass} cursor-pointer`}
+          />
+        </div>
+      </div>
     </div>
   );
 }

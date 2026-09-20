@@ -12,6 +12,10 @@ function Row({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+function initialsOf(first: string, last: string) {
+  return ((first?.[0] ?? '') + (last?.[0] ?? '')).toUpperCase() || '?';
+}
+
 export default async function AdmissionDetailPage({
   params,
 }: {
@@ -21,6 +25,10 @@ export default async function AdmissionDetailPage({
   const admission = await getAdmission(id);
   if (!admission) notFound();
 
+  const photoUrl = admission.student_photo_path
+    ? await getSignedUrl('admissions-private', admission.student_photo_path)
+    : null;
+
   const documentUrls = await Promise.all(
     (admission.document_paths ?? []).map(async (path) => ({
       path,
@@ -28,37 +36,79 @@ export default async function AdmissionDetailPage({
     }))
   );
 
+  const guardians = [...(admission.admission_guardians ?? [])].sort((a, b) => a.guardian_order - b.guardian_order);
+
   return (
     <div className="max-w-2xl">
       <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold tracking-wide text-loam">{admission.reference_number}</p>
-          <h1 className="font-serif text-2xl font-semibold text-canopy">
-            {[admission.first_name, admission.last_name].filter(Boolean).join(' ')}
-          </h1>
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-paper">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt="Student" className="h-full w-full object-cover" />
+            ) : (
+              <span className="font-serif text-lg font-semibold text-canopy">
+                {initialsOf(admission.first_name, admission.last_name)}
+              </span>
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-bold tracking-wide text-loam">{admission.reference_number}</p>
+            <h1 className="font-serif text-2xl font-semibold text-canopy">
+              {[admission.first_name, admission.middle_name, admission.last_name].filter(Boolean).join(' ')}
+            </h1>
+          </div>
         </div>
         <AdmissionStatusControl id={admission.id} status={admission.status} />
       </div>
 
       <div className="mb-6 rounded-sm border border-border bg-surface p-5">
-        <h3 className="mb-3 font-serif text-base text-canopy">Learner Details</h3>
-        <Row label="Class" value={admission.student_class} />
-        <Row label="Stream" value={admission.stream} />
+        <h3 className="mb-3 font-serif text-base text-canopy">Learner</h3>
         <Row label="Gender" value={admission.gender} />
         <Row label="Date of Birth" value={admission.date_of_birth} />
-        <Row label="Mobile Number" value={admission.mobile_number} />
-        <Row label="Email" value={admission.email} />
+        <Row label="Previous / Current School" value={admission.previous_school} />
+        <Row label="Class" value={admission.student_class} />
+        <Row label="Stream" value={admission.stream} />
       </div>
 
       <div className="mb-6 rounded-sm border border-border bg-surface p-5">
-        <h3 className="mb-3 font-serif text-base text-canopy">Guardian Details</h3>
-        <Row label="If Guardian Is" value={admission.guardian_is} />
-        <Row label="Name" value={admission.guardian_name} />
-        <Row label="Relation" value={admission.guardian_relation} />
-        <Row label="Email" value={admission.guardian_email} />
-        <Row label="Phone" value={admission.guardian_phone} />
-        <Row label="Occupation" value={admission.guardian_occupation} />
-        <Row label="Address" value={admission.guardian_address} />
+        <h3 className="mb-3 font-serif text-base text-canopy">Transfer</h3>
+        <Row label="Transferring?" value={admission.is_transferring ? 'Yes' : 'No'} />
+        {admission.is_transferring && (
+          <>
+            <Row label="Previous School" value={admission.transfer_school_name} />
+            <Row label="Location" value={admission.transfer_school_location} />
+            <Row label="Reason" value={admission.transfer_reason} />
+          </>
+        )}
+      </div>
+
+      <div className="mb-6 rounded-sm border border-border bg-surface p-5">
+        <h3 className="mb-3 font-serif text-base text-canopy">Medical</h3>
+        <Row label="Allergies" value={admission.allergies} />
+        <Row label="Medical Conditions" value={admission.medical_conditions} />
+        <Row label="Disability / Additional Support" value={admission.has_disability ? 'Yes' : 'No'} />
+        {admission.has_disability && <Row label="Details" value={admission.disability_details} />}
+        <Row label="Other Notes" value={admission.other_medical_notes} />
+      </div>
+
+      <div className="mb-6 rounded-sm border border-border bg-surface p-5">
+        <h3 className="mb-3 font-serif text-base text-canopy">Guardian{guardians.length > 1 ? 's' : ''}</h3>
+        {guardians.length === 0 ? (
+          <p className="text-sm text-mist">No guardian information on file.</p>
+        ) : (
+          guardians.map((g) => (
+            <div key={g.guardian_order} className="mb-4 last:mb-0">
+              <p className="mb-1 text-xs font-bold tracking-wide text-loam">GUARDIAN {g.guardian_order}</p>
+              <Row label="Name" value={g.full_name} />
+              <Row label="Relationship" value={g.relationship} />
+              <Row label="Primary Phone" value={g.primary_phone} />
+              <Row label="Second Phone" value={g.secondary_phone} />
+              <Row label="Email" value={g.email} />
+              <Row label="Address" value={g.address} />
+            </div>
+          ))
+        )}
       </div>
 
       <div className="rounded-sm border border-border bg-surface p-5">
@@ -81,8 +131,7 @@ export default async function AdmissionDetailPage({
           </ul>
         )}
         <p className="mt-3 text-xs italic text-mist">
-          Links are signed and expire after 10 minutes — refresh the page to
-          regenerate them.
+          Links are signed and expire after 10 minutes — refresh the page to regenerate them.
         </p>
       </div>
     </div>

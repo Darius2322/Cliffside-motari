@@ -6,12 +6,11 @@
 // options.
 
 export const admissionStatuses = [
-  'Received',
+  'Submitted',
   'Under Review',
-  'Shortlisted',
-  'Accepted',
-  'Declined',
-  'Completed',
+  'Approved',
+  'Rejected',
+  'Additional Information Required',
 ] as const;
 
 export const complaintStatuses = ['Received', 'Under Review', 'In Progress', 'Resolved'] as const;

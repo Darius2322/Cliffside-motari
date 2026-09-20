@@ -3,57 +3,75 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
+export type AdminGuardian = {
+  guardian_order: number;
+  full_name: string;
+  relationship: string;
+  primary_phone: string;
+  secondary_phone: string | null;
+  email: string | null;
+  address: string | null;
+};
 
 export type AdminAdmission = {
   id: string;
   reference_number: string;
-  student_class: string;
-  stream: string | null;
   first_name: string;
-  last_name: string | null;
+  middle_name: string | null;
+  last_name: string;
   gender: string;
   date_of_birth: string;
-  mobile_number: string | null;
-  email: string;
-  guardian_is: string;
-  guardian_name: string;
-  guardian_relation: string;
-  guardian_email: string | null;
-  guardian_phone: string | null;
-  guardian_occupation: string | null;
-  guardian_address: string | null;
+  previous_school: string | null;
+  student_class: string;
+  stream: string | null;
+  student_photo_path: string | null;
+  is_transferring: boolean;
+  transfer_school_name: string | null;
+  transfer_school_location: string | null;
+  transfer_reason: string | null;
+  allergies: string | null;
+  medical_conditions: string | null;
+  has_disability: boolean;
+  disability_details: string | null;
+  other_medical_notes: string | null;
   document_paths: string[] | null;
   status: string;
+  admission_number: string | null;
+  report_purpose: string | null;
+  report_date: string | null;
+  admission_requirements: string | null;
   created_at: string;
+  admission_guardians: AdminGuardian[];
 };
 
 export async function listAdmissions(): Promise<AdminAdmission[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('admissions')
-    .select('*')
+    .select('*, admission_guardians(*)')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('Listing admissions failed', error);
     return [];
   }
-  return data ?? [];
+  return (data ?? []) as AdminAdmission[];
 }
 
 export async function getAdmission(id: string): Promise<AdminAdmission | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('admissions').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase
+    .from('admissions')
+    .select('*, admission_guardians(*)')
+    .eq('id', id)
+    .maybeSingle();
   if (error) {
     console.error('Fetching admission failed', error);
     return null;
   }
-  return data;
+  return data as AdminAdmission | null;
 }
 
-export async function updateAdmissionStatus(
-  id: string,
-  status: string
-): Promise<{ success: boolean }> {
+export async function updateAdmissionStatus(id: string, status: string): Promise<{ success: boolean }> {
   const supabase = await createClient();
   const { error } = await supabase.from('admissions').update({ status }).eq('id', id);
 

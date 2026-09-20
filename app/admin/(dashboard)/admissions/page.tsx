@@ -2,12 +2,11 @@ import Link from 'next/link';
 import { listAdmissions } from '@/lib/actions/admin-admissions';
 
 const statusColor: Record<string, string> = {
-  Received: 'bg-border text-mist',
+  Submitted: 'bg-border text-mist',
   'Under Review': 'bg-loam text-white',
-  Shortlisted: 'bg-loam text-white',
-  Accepted: 'bg-canopy text-white',
-  Declined: 'bg-red-100 text-red-700',
-  Completed: 'bg-canopy text-white',
+  Approved: 'bg-canopy text-white',
+  Rejected: 'bg-red-100 text-red-700',
+  'Additional Information Required': 'bg-loam text-white',
 };
 
 export default async function AdminAdmissionsPage() {
@@ -23,12 +22,13 @@ export default async function AdminAdmissionsPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-sm border border-border bg-surface">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="border-b border-border bg-paper text-xs font-semibold uppercase tracking-wide text-mist">
               <tr>
                 <th className="px-5 py-3">Reference</th>
                 <th className="px-5 py-3">Learner</th>
                 <th className="px-5 py-3">Class</th>
+                <th className="px-5 py-3">Transfer</th>
                 <th className="px-5 py-3">Guardian</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Submitted</th>
@@ -44,7 +44,8 @@ export default async function AdminAdmissionsPage() {
                   </td>
                   <td className="px-5 py-3">{[a.first_name, a.last_name].filter(Boolean).join(' ')}</td>
                   <td className="px-5 py-3 text-mist">{a.student_class}</td>
-                  <td className="px-5 py-3 text-mist">{a.guardian_name}</td>
+                  <td className="px-5 py-3 text-mist">{a.is_transferring ? 'Yes' : 'No'}</td>
+                  <td className="px-5 py-3 text-mist">{a.admission_guardians?.[0]?.full_name ?? '—'}</td>
                   <td className="px-5 py-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor[a.status]}`}>
                       {a.status}
